@@ -17,6 +17,7 @@ async def main():
     "review": "",
     "retry_count": 0,
     "feedback": "",
+    "final_report": "",
 }
 
     print("Starting research workflow...\n")
@@ -31,6 +32,9 @@ async def main():
 
     print("\n=== REVIEW ===")
     print(result["review"])
+
+    print("\n=== FINAL REPORT ===")
+    print(result["final_report"])
 
 
 if __name__ == "__main__":

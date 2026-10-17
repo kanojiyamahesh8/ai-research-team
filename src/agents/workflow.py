@@ -5,6 +5,7 @@ from langgraph.graph import END, START, StateGraph
 
 from src.agents.researcher import research
 from src.agents.reviewer import review_research
+from src.agents.report_writer import write_report
 
 
 class ResearchState(TypedDict):
@@ -13,7 +14,7 @@ class ResearchState(TypedDict):
     review: str
     retry_count: int
     feedback: str
-
+    final_report: str
 
 
 async def researcher_node(state: ResearchState) -> dict:
@@ -35,10 +36,6 @@ async def researcher_node(state: ResearchState) -> dict:
         "findings": findings,
         "retry_count": retry_count,
     }
-
-
-
-
 
 
 async def reviewer_node(state: ResearchState) -> dict:
@@ -65,8 +62,6 @@ async def reviewer_node(state: ResearchState) -> dict:
     }
 
 
-
-
 def route_after_review(state: ResearchState) -> str:
     """Retry when requested, but enforce a maximum of two retries."""
 
@@ -74,18 +69,29 @@ def route_after_review(state: ResearchState) -> str:
         if state["retry_count"] < 2:
             return "research"
 
-    return "finish"
+    return "write_report"
 
 
+async def report_writer_node(state: ResearchState) -> dict:
+    """Generate the final report from the research and review."""
+
+    final_report = await write_report(
+        question=state["question"],
+        findings=state["findings"],
+        review=state["review"],
+    )
+
+    return {"final_report": final_report}
 
 
 def build_workflow():
-    """Build the Researcher → Reviewer workflow with bounded retries."""
+    """Build the Researcher → Reviewer → Report Writer workflow."""
 
     graph = StateGraph(ResearchState)
 
     graph.add_node("researcher", researcher_node)
     graph.add_node("reviewer", reviewer_node)
+    graph.add_node("report_writer", report_writer_node)
 
     graph.add_edge(START, "researcher")
     graph.add_edge("researcher", "reviewer")
@@ -95,8 +101,10 @@ def build_workflow():
         route_after_review,
         {
             "research": "researcher",
-            "finish": END,
+            "write_report": "report_writer",
         },
     )
+
+    graph.add_edge("report_writer", END)
 
     return graph.compile()
