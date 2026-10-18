@@ -4,6 +4,12 @@ from pydantic import BaseModel, Field
 
 from src.agents.workflow import build_workflow
 
+import logging
+import traceback
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
 app = FastAPI(
     title="AI Research Team API",
     description="API for the multi-agent research workflow",
@@ -29,22 +35,28 @@ async def health_check():
     return {"status": "ok"}
 
 
+
 @app.post("/research", response_model=ResearchResponse)
 async def conduct_research(request: ResearchRequest):
-    workflow = build_workflow()
+    try:
+        workflow = build_workflow()
 
-    initial_state = {
-        "question": request.question,
-        "findings": "",
-        "review": "",
-        "retry_count": 0,
-        "feedback": "",
-        "final_report": "",
-    }
+        initial_state = {
+            "question": request.question,
+            "findings": "",
+            "review": "",
+            "retry_count": 0,
+            "feedback": "",
+            "final_report": "",
+        }
 
-    result = await workflow.ainvoke(initial_state)
+        result = await workflow.ainvoke(initial_state)
 
-    return ResearchResponse(
-        question=request.question,
-        final_report=result["final_report"],
-    )
+        return ResearchResponse(
+            question=request.question,
+            final_report=result["final_report"],
+        )
+
+    except Exception:
+        logger.exception("Research workflow failed")
+        raise
