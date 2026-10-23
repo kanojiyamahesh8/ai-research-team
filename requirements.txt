@@ -6,5 +6,5 @@ langchain
 langchain-groq
 langgraph
 langsmith
-mcp
+mcp==1.30.0
 pytest
