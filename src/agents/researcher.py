@@ -9,6 +9,8 @@ from mcp.client.stdio import stdio_client
 
 from src.adapters.mcp_to_langchain import convert_mcp_tool
 
+import logging
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SERVER_PATH = PROJECT_ROOT / "src" / "mcp_server" / "server.py"
@@ -22,6 +24,13 @@ async def research(question: str) -> str:
         args=[str(SERVER_PATH)],
         cwd=str(PROJECT_ROOT),
     )
+
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    logger.info("MCP server path: %s", SERVER_PATH)
+    logger.info("MCP server file exists: %s", SERVER_PATH.exists())
+    logger.info("Python executable: %s", sys.executable)
 
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
